@@ -1,0 +1,34 @@
+{
+    "connections": {
+        "api": {
+            "enabled": false,
+            "host": "http://localhost",
+            "token": null
+        },
+        "db": {
+            "host": "localhost",
+            "port": 5432,
+            "user": "root",
+            "pass": ""
+        }
+    },
+    "bot": {
+        "token": ""
+    },
+    "general": {
+
+    },
+    "servers": {
+        "123": {
+            "games": {
+                "questionare": {
+                    "enabled": true,
+                    "pick_weight": 50.0,
+                    "questions": [
+
+                    ]
+                }
+            }
+        }
+    }
+}
