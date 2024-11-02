@@ -1,2 +1,3 @@
 venv
 conf.json
+__pycache__
