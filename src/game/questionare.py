@@ -1,6 +1,6 @@
-from .base import Game
+from .base import GameBase
 
-class GameQuestionare(Game):
+class Game(GameBase):
     def start():
         pass
     

@@ -1,6 +1,6 @@
-from discord import Discord    
+from bot import Discord    
 
-class Game():
+class GameBase():
     bot: Discord = None
     name: str = None
     
