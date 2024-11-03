@@ -14,14 +14,10 @@ class GameBase():
         self.pick_weight = pick_weight
         
     def start(self):
-        # Pick random question.
-        question = random.choice(self.questions)
-        
-        self.cur_question_idx = question
+        pass
     
     def end(self):
-        # Remove question.
-        self.cur_question = None
+        pass
 
     def process_msg(self, msg: discord.Message):
         pass
