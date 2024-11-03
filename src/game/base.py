@@ -6,7 +6,7 @@ from bot import Discord
 class GameBase():
     def __init__(self,
         bot: Discord,
-        name: str,
+        name: str = "Game",
         pick_weight = 50.0
     ):
         self.bot = bot

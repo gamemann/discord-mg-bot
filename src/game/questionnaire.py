@@ -1,4 +1,5 @@
 import discord
+import random
 
 from bot import Discord
 from .base import GameBase
@@ -19,21 +20,25 @@ class Game(GameBase):
     
     def __init__(self,
         bot: Discord,
-        name: str,
-        pick_weight: float,
-        questions: list[Question]            
+        questions: list[Question],
+        name: str = "Questionnaire",
+        pick_weight: float = 50.0,
     ):
         self.bot = bot
         self.name = name
         self.pick_weight = pick_weight
         self.questions = questions
         
-        super().__init__()
+        super().__init__(bot)
     
     def start(self):
         # Execute base class.
         super().start()
-    
+        
+        # We need to choose a random question!
+        self.cur_question = random.choice(self.questions)
+        
+                        
     def end(self):
         # Execute base class.
         super().end()
@@ -42,16 +47,19 @@ class Game(GameBase):
         if self.cur_question is None:
             return False
         
+        if "answers" not in self.cur_question:
+            return False
+        
         # Loop through answers
-        for answer in self.cur_question.answers:
+        for answer in self.cur_question["answers"]:
             # Strip input and answer.
             input_f = input.strip()
-            answer_f = answer.answer.strip()
+            answer_f = answer["answer"].strip()
             
             # Check if we should lower-case.
-            if not answer.case_sensitive:
-                input_f = input.lower()
-                answer_f = answer.answer.lower()
+            if not answer["case_sensitive"]:
+                input_f = input_f.lower()
+                answer_f = answer_f.lower()
                 
             # Check input and answer.
             if input_f == answer_f:
@@ -64,5 +72,10 @@ class Game(GameBase):
             return
         
         # Check if our content's is correct to the current question.
-        if self.is_correct(msg.content):
-            print("Correct answer!")        
+        try:
+            if self.is_correct(msg.content):
+                print("Correct answer!")
+            else:
+                print("Wrong answer")
+        except Exception as e:
+            print(e)
