@@ -1,31 +1,31 @@
 {
-    "connections": {
-        "api": {
-            "enabled": false,
-            "host": "http://localhost",
-            "token": null
-        },
-        "db": {
-            "host": "localhost",
-            "port": 5432,
-            "user": "root",
-            "pass": ""
-        }
+    "debug": {
+        "verbose": 1
     },
     "bot": {
         "token": ""
     },
-    "general": {
-
-    },
     "servers": {
         "123": {
+            "game_start_auto": true,
             "games": {
-                "questionare": {
-                    "enabled": true,
-                    "pick_weight": 50.0,
+                "questionnaire": {
+                    "name": "Questionnaire",
+                    "pick_weight": 30.0,
                     "questions": [
-
+                        {
+                            "question": "What is 2 + 1?",
+                            "answers": [
+                                {
+                                    "case_sensitive": false,
+                                    "answer": "3"
+                                },
+                                {
+                                    "case_sensitive": false,
+                                    "answer": "three"
+                                }
+                            ]
+                        }
                     ]
                 }
             }
