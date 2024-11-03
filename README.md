@@ -103,6 +103,25 @@ While the bot's configuration can be handled locally inside of the JSON config f
 
 *Not Finished...*
 
+## Requirements
+The [Discord.py](https://discordpy.readthedocs.io/en/stable/) Python library is required for this project to run.
+
+With that said, I also recommend using a Python virtual environment when installing these libraries for development.
+
+```bash
+# Create virtual environment.
+python3 -m venv venv/
+
+# Source new environment.
+source ./venv/bin/activate
+```
+
+You may use `pip` to install the requirements with the following command afterwards.
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Running
 Firstly, make sure you configure the project. I recommend copying the [`conf_ex.json`](./conf_ex.json) to `./conf.json`.
 
