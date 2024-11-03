@@ -6,7 +6,7 @@ from bot import Discord
 from config import Config
 
 class Server():    
-    def __init__(self, bot: Discord, id: int, games: dict[str, any], cfg: Config, next_game_random = True, next_game_cooldown = 120.0, game_start_auto = False, game_start_cmd = True, game_start_manual = True):
+    def __init__(self, bot: Discord, cfg: Config, id: int, games: dict[str, any], next_game_random = True, next_game_cooldown = 120.0, game_start_auto = False, game_start_cmd = True, game_start_manual = True):
         self.bot = bot
         self.id = id
         self.cfg = cfg
@@ -44,6 +44,16 @@ class Server():
                 continue
             
             self.games[k] = game_cl
+            
+    def to_dict(self):
+        return {
+            "next_game_cooldown": self.next_game_cooldown,
+            "next_game_random": self.next_game_random,
+            "game_start_auto": self.game_start_auto,
+            "game_start_cmd": self.game_start_cmd,
+            "game_start_manual": self.game_start_manual,
+            "games": self.games
+        }
         
     def get_next_game_key(self):
         # Check for random.
