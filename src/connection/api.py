@@ -1,5 +1,6 @@
-from base import Connection, UserStats
+from connection import Connection
 from config import Config
+from misc import UserStats
 
 class ConnectionApi(Connection):
     def __init__(self,
