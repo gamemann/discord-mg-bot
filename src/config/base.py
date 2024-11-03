@@ -179,7 +179,7 @@ class Config():
                 val = Server()
                 
                 val.next_game_random = srv.get("next_game_random", val.next_game_random)
-                val.next_game_cooldown = srv.get("next_game_cooldown")
+                val.next_game_cooldown = srv.get("next_game_cooldown", val.next_game_cooldown)
                 
                 val.game_start_auto = srv.get("game_start_auto", val.game_start_auto)
                 val.game_start_cmd = srv.get("game_start_cmd", val.game_start_cmd)
