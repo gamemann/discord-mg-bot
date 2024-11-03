@@ -2,17 +2,41 @@ import json
 
 from utils import safe_write
 
+class Debug():
+    def __init__(self):
+        self.verbose = 1
+        self.log_to_file = False
+        self.log_dir = "./logs"
+        
+    def as_json(self):
+        return {
+            "verbose": self.verbose,
+            "log_to_file": self.log_to_file,
+            "log_dir": self.log_dir
+        }
+        
+class General():
+    def __init__(self):
+        self.save_locally = True
+
+    def as_json(self):
+        return {
+            "save_locally": self.save_locally
+        }
+
 class ConnectionApi():
     def __init__(self):
         self.enabled = False
         self.host = "http://localhost"
         self.token = None
+        self.web_config = True
         
     def as_json(self):
         return {
             "enabled": self.enabled,
             "host": self.host,
-            "token": self.token
+            "token": self.token,
+            "web_config": self.web_config
         }
     
 class ConnectionDb():
@@ -22,6 +46,7 @@ class ConnectionDb():
         self.port = 5432
         self.user = "root"
         self.password = ""
+        self.web_config = True
         
     def as_json(self):
         return {
@@ -29,7 +54,8 @@ class ConnectionDb():
             "host": self.host,
             "port": self.port,
             "user": self.user,
-            "password": self.password
+            "password": self.password,
+            "web_config": self.web_config
         }
 
 class Connections():
@@ -51,10 +77,6 @@ class Bot():
         return {
             "token": self.token
         }
-    
-class General():
-    def as_json(self):
-        return {}
 
 class Server():
     def __init__(self):
@@ -69,22 +91,28 @@ class Server():
         
     def as_json(self):
         return {
+            "games": self.games,
             "next_game_cooldown": self.next_game_cooldown,
-            "next_game_random": self.next_game_random
+            "next_game_random": self.next_game_random,
+            "game_start_auto": self.game_start_auto,
+            "game_start_cmd": self.game_start_cmd,
+            "game_start_manual": self.game_start_manual
         }
 
 class Config():
     def __init__(self):
-        self.connections: Connections = Connections()
-        self.bot: Bot = Bot()
-        self.general: General = General()
+        self.debug = Debug()
+        self.general = General()
+        self.connections = Connections()
+        self.bot = Bot()
         self.servers: dict[int, Server] = {}
         
     def as_json(self):
         return {
+            "debug": self.debug.as_json(),
+            "general": self.general.as_json(),
             "connections": self.connections.as_json(),
             "bot": self.connections.as_json(),
-            "general": self.general.as_json(),
             "servers": {k: v.as_json() for k, v in self.servers.items()}
         }
     
@@ -96,6 +124,20 @@ class Config():
             
         if data is None:
             raise Exception("JSON data is None.")
+        
+        # Debug settings.
+        if "debug" in data:
+            debug = data["debug"]
+            
+            self.debug.verbose = debug.get("verbose", self.debug.verbose)
+            self.debug.log_to_file = debug.get("log_to_file", self.debug.log_to_file)
+            self.debug.log_dir = debug.get("log_dir", self.debug.log_dir)
+        
+        # General settings.
+        if "general" in data:
+            general = data["general"]
+            
+            self.general.save_locally = general.get("save_locally", self.general.save_locally)
             
         # Load connections.
         if "connections" in data:
@@ -108,6 +150,7 @@ class Config():
                 self.connections.api.enabled = api.get("enabled", self.connections.api.enabled)
                 self.connections.api.host = api.get("host", self.connections.api.host)
                 self.connections.api.token = api.get("token", self.connections.token)
+                self.connections.api.web_config = api.get("web_config", self.connections.api.web_config)
                 
             # Load database.
             if "db" in conns:
@@ -118,6 +161,7 @@ class Config():
                 self.connections.db.port = db.get("port", self.connections.db.port)
                 self.connections.db.user = db.get("user", self.connections.db.user)
                 self.connections.db.password = db.get("password", self.connections.db.password)
+                self.connections.db.web_config = db.get("web_config", self.connections.db.web_config)
                 
         # Load bot settings.
         if "bot" in data:
@@ -147,7 +191,7 @@ class Config():
                 
                 self.servers[int(id)] = val
 
-    def save_to_fs(self, path):
+    def save_to_fs(self, path: str):
         contents = json.dump(self.as_json(), indent = 4)
         
         # Safely save to file system.
@@ -155,6 +199,13 @@ class Config():
         
     def print(self):
         print("Settings")
+        
+        print("\tDebug")
+        debug = self.debug
+        
+        print(f"\t\tVerbose => {debug.verbose}")
+        print(f"\t\tLog To File => {debug.log_to_file}")
+        print(f"\t\tLog Directory => {debug.log_dir}")
         
         # General settings
         print(f"\tGeneral")
@@ -169,9 +220,10 @@ class Config():
         print(f"\t\tAPI")
         api = self.connections.api
         
-        print(f"\t\t\tEnabled => {self.connections.api.enabled}")
-        print(f"\t\t\tHost => {self.connections.api.host}")
-        print(f"\t\t\tToken => {self.connections.api.token}")
+        print(f"\t\t\tEnabled => {api.enabled}")
+        print(f"\t\t\tHost => {api.host}")
+        print(f"\t\t\tToken => {api.token}")
+        print(f"\t\t\tWeb Config => {api.web_config}")
         
         print(f"\t\tDatabase")
         db = self.connections.db
@@ -181,6 +233,7 @@ class Config():
         print(f"\t\t\tPort => {db.port}")
         print(f"\t\t\tUser => {db.user}")
         print(f"\t\t\tPassword => {db.password}")
+        print(f"\t\t\tWeb Config => {db.web_config}")
         
         # Server settings
         print(f"\t\tServers")
