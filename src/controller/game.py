@@ -7,20 +7,43 @@ from server import Server
 from config import Config
 from utils import debug_msg
 
-class Game():
-    def __init__(self, obj: any):
-        self.obj = obj
-
 class GameController():
-    def __init__(self, bot: Discord, cfg: Config, servers: dict[int, Server]):
+    def __init__(self, bot: Discord, cfg: Config):
         self.bot = bot
         self.cfg = cfg
-        self.servers: dict[int, Server] = servers
+        self.servers: dict[int, Server] = {}
         
-        self.game_check_time = 30.0
-        
+        # Parse servers.
+        self.parse_servers()
+                
+        # Register events and commands.
         self.register_events()
         self.register_commands()
+        
+    def parse_servers(self):
+        # Fill servers from config.
+        for k, srv in self.cfg.servers.items():
+            debug_msg(2, self.cfg, f"Setting up server #{k}...")
+            
+            # We need to handle our games first.
+            games: dict[str, any] = {}
+            
+            for k2, game in srv.games.items():
+                debug_msg(3, self.cfg, f"Adding game '{k2}' to server #{k}...")
+                
+                games[k2] = game
+                                
+            self.servers[int(k)] = Server(
+                bot = self.bot,
+                cfg = self.cfg,
+                id = int(k),
+                games = games,
+                next_game_random = srv.next_game_random,
+                next_game_cooldown = srv.next_game_cooldown,
+                game_start_auto = srv.game_start_auto,
+                game_start_cmd = srv.game_start_cmd,
+                game_start_manual = srv.game_start_manual
+            )
         
     async def game_thread(self):
         debug_msg(1, self.cfg, "Starting game controller thread...")
@@ -47,7 +70,7 @@ class GameController():
                     print(e)
                 
             # Sleep.
-            await asyncio.sleep(self.game_check_time)
+            await asyncio.sleep(self.cfg.general.game_check_interval)
     
     
     def register_events(self):
@@ -69,10 +92,10 @@ class GameController():
                 srv.cur_game.process_msg(msg)
                 
     def register_commands(self):
-        @self.bot.command("mg_start")
+        @self.bot.command("start")
         async def start(ctx):
-            pass
+            print("Executed start")
         
-        @self.bot.command("mg_stop")
+        @self.bot.command("stop")
         async def stop(ctx):
-            pass
+            print("Executed stop")

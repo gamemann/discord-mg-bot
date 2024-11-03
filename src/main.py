@@ -105,8 +105,8 @@ async def main():
                 debug_msg(0, cfg, "Failed to retrieve config through the database due to exception.")
                 debug_msg(0, cfg, e)
     
-    # Check if we should save the file to our file system.
-    if save_to_fs:
+    # Check if we should save the config to our file system.
+    if cfg.general.save_locally and save_to_fs:
         try:
             cfg.save_to_fs(cfg_path)
         except Exception as e:
@@ -133,27 +133,10 @@ async def main():
 
     debug_msg(1, cfg, "Discord bot started and connected!")
     
-    # Create server dictionary to controller.
-    servers: dict[int, Server] = {}
+    # Create controller and pass Discord bot.
+    controller = GameController(bot, cfg)
     
-    # Fill servers from config.
-    for k, srv in cfg.servers.items():
-        debug_msg(2, cfg, f"Setting up server #{k}...")
-        
-        # We need to handle our games first.
-        games: dict[str, any] = {}
-        
-        for k2, game in srv.games.items():
-            debug_msg(3, cfg, f"Adding game '{k2}' to server #{k}...")
-            
-            games[k2] = game
-            
-        servers[int(k)] = Server(bot, int(k), games)
-    
-    # Create controller and pass Discord bot and servers.
-    controller = GameController(bot, cfg, servers)
-    
-    # We controller task.
+    # Create controller task for handling games.
     await asyncio.create_task(controller.game_thread())
     
     debug_msg(1, cfg, "Exiting program!")
