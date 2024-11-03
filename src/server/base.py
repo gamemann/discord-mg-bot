@@ -6,10 +6,10 @@ class Server():
     def __init__(self, id: str):
         self.id = id
         
-        self.games = dict[str, any]
+        self.games: dict[str, any] = {}
         
         self.cur_game: str = None
-        self.last_game: datetime = datetime.now()
+        self.last_game = datetime.now()
         self.next_game_cooldown = 120.0
         
         self.next_game_random = True
@@ -33,7 +33,10 @@ class Server():
         next_idx = (cur_idx + 1) % len(keys)
             
         return keys[next_idx]
-        
+    
+    def start_new_game(self):
+        # Get next game and start.
+        next_game = self.get_next_game_key()
 
             
                 
