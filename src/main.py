@@ -131,10 +131,22 @@ async def main():
         
         sys.exit(1)
 
-    debug_msg(1, cfg, "Discord bot started and connected!")
+    debug_msg(1, cfg, "Connecting Discord bot...")
+    
+    # Wait for bot to become ready.
+    while True:
+        if bot.ready:
+            break
+        
+        await asyncio.sleep(1)
+        
+    debug_msg(2, cfg, f"Discord bot connected successfully!")
+    debug_msg(2, cfg, f"Creating game controller...")
     
     # Create controller and pass Discord bot.
     controller = GameController(bot, cfg)
+    
+    debug_msg(2, cfg, f"Starting game controller task...")
     
     # Create controller task for handling games.
     await asyncio.create_task(controller.game_thread())
