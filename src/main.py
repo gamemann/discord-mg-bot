@@ -1,34 +1,46 @@
 import sys
-# import traceback
+import traceback
+import discord
+import asyncio
 
 from bot import Discord
 from config import Config
 from controller import GameController
+from connection import ConnectionApi, ConnectionDb
+from server import Server
+from utils import debug_msg
 
 HELP_MENU = f"""USAGE: python3 src/main.py [--cfg=<path> -l -h]
 \t--cfg => The path to the config file.
 \t-l --list => Whether to list config contents.
 \t-h --help => Whether to print the help menu."""
 
-def main():
+async def main():
+    # CLI arguments.
     cfg_path = "./conf.json"
     list = False
     help = False
     
     # Parse CLI.
-    for arg in sys.argv:
+    for k, arg in enumerate(sys.argv):
         # Handle config path.
         if arg.startswith("cfg="):
             cfg_path = arg.split('=')[1]
+        elif arg == "--cfg" or arg == "c":
+            val_idx = k + 1
+            
+            if val_idx < len(sys.argv):
+                cfg_path = sys.argv[val_idx]
         
         # Handle list.
-        if arg.startswith("-l") or arg.startswith("--list"):
+        if arg == "-l" or arg == "--list":
             list = True
             
         # Handle help menu.
-        if arg.startswith("-h") or arg.startswith("--help"):
+        if arg == "-h" or arg == "--help":
             help = True
-            
+    
+    # Print help menu if we need to.
     if help:
         print(HELP_MENU)
         
@@ -53,14 +65,98 @@ def main():
         
         sys.exit(0)
         
-    # We need to configure the game controller before passing to Discord bot.
-    controller = GameController()
+    # Create connection.
+    conn = None
+    save_to_fs = False
+    
+    # Check API connection.
+    if cfg.connections.api.enabled:
+        try:
+            conn = ConnectionApi(cfg.connections.api.host, cfg.connections.api.token)
+        except Exception as e:
+            debug_msg(0, cfg, "Failed to setup API connection. Falling back to database if enabled.")
+            debug_msg(0, cfg, e)
+        
+        # Check web config.
+        if conn is not None and cfg.connections.api.web_config:
+            try:
+                conn.get_cfg()
+                
+                save_to_fs = True
+            except Exception as e:
+                debug_msg(0, cfg, "Failed to retrieve config through web API due to exception.")
+                debug_msg(0, cfg, e)
+
+    # Fallback to database.
+    if conn is None and cfg.connections.db.enabled:
+        try:
+            conn = ConnectionDb(cfg.connections.db.host, cfg.connections.db.port, cfg.connections.db.user, cfg.connections.db.password)
+        except Exception as e:
+            debug_msg(0, cfg, "Failed to setup database due to exception. Web config and stats will be disabled!")
+            debug_msg(0, cfg, e)
+            
+        # Check web config
+        if conn is not None and cfg.connections.db.web_config:
+            try:
+                conn.get_cfg()
+                
+                save_to_fs = True
+            except Exception as e:
+                debug_msg(0, cfg, "Failed to retrieve config through the database due to exception.")
+                debug_msg(0, cfg, e)
+    
+    # Check if we should save the file to our file system.
+    if save_to_fs:
+        try:
+            cfg.save_to_fs(cfg_path)
+        except Exception as e:
+            debug_msg(0, cfg, f"Failed to save config ({cfg_path}) to file system due to exception.")
+            debug_msg(0, cfg, e)
+    
+    # Configure Discord intents.
+    intents = discord.Intents.default()
+    intents.message_content = True
     
     # Create Discord bot.
-    bot = Discord(cfg.bot.token, controller)
+    try:
+        bot = Discord(cfg.bot.token, intents)
+        
+        # Connect and run bot.
+        asyncio.create_task(bot.connect_and_run())
+    except Exception as e:
+        debug_msg(0, cfg, "Failed to start and run Discord bot due to exception!")
+        debug_msg(0, cfg, e)
+        
+        traceback.print_exc()
+        
+        sys.exit(1)
+
+    debug_msg(1, cfg, "Discord bot started and connected!")
     
-    # Connect and run bot.
-    bot.connect()
+    # Create server dictionary to controller.
+    servers: dict[int, Server] = {}
+    
+    # Fill servers from config.
+    for k, srv in cfg.servers.items():
+        debug_msg(2, cfg, f"Setting up server #{k}...")
+        
+        # We need to handle our games first.
+        games: dict[str, any] = {}
+        
+        for k2, game in srv.games.items():
+            debug_msg(3, cfg, f"Adding game '{k2}' to server #{k}...")
+            
+            games[k2] = game
+            
+        servers[int(k)] = Server(bot, int(k), games)
+    
+    # Create controller and pass Discord bot and servers.
+    controller = GameController(bot, cfg, servers)
+    
+    # We controller task.
+    await asyncio.create_task(controller.game_thread())
+    
+    debug_msg(1, cfg, "Exiting program!")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
