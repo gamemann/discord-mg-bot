@@ -1,5 +1,6 @@
 import discord
 import asyncio
+import traceback
 
 from datetime import datetime
 from bot import Discord
@@ -57,22 +58,22 @@ class GameController():
             # Loop through all servers and check
             for k, srv in self.servers.items():
                 # If we aren't ready for a new game, ignore.
-                if not srv.game_start_auto or srv.cur_game is not None or srv.next_game_cooldown < 1 or (srv.last_game is not None and now < (srv.last_game + srv.next_game_cooldown)):
+                if not srv.game_start_auto or srv.cur_game is not None or srv.next_game_cooldown < 1 or (srv.last_game is not None and now.timestamp() < (srv.last_game.timestamp() + srv.next_game_cooldown)):
                     continue
                 
                 debug_msg(4, self.cfg, f"Found server #{k} ready for a new game...")
                 
                 try:
                     # Start new game.
-                    srv.start_new_game()
+                    asyncio.create_task(srv.start_new_game())
                 except Exception as e:
                     print(f"Failed to start new game for server ID '{k}' due to exception.")
                     print(e)
+                    traceback.print_exc()
                 
             # Sleep.
             await asyncio.sleep(self.cfg.general.game_check_interval)
-    
-    
+
     def register_events(self):
         @self.bot.event
         async def on_message(msg: discord.Message):
@@ -89,7 +90,7 @@ class GameController():
             srv = self.servers[sid]
                     
             if srv.cur_game is not None:
-                srv.cur_game.process_msg(msg)
+                await srv.cur_game.process_msg(msg)
                 
     def register_commands(self):
         @self.bot.command("start")

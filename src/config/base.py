@@ -262,6 +262,3 @@ class Config():
                     
                     for k2, v2 in v.items():
                         print(f"\t\t\t\t\t\t{k2} => {v2}")
-        
-        
-    

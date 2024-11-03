@@ -12,18 +12,20 @@ class GameBase():
         cfg: Config,
         srv: Server,
         name: str = "Game",
-        pick_weight = 50.0
+        pick_weight = 50.0,
+        channels: list[int] = []
     ):
         self.bot = bot
         self.cfg = cfg
         self.srv = srv
         self.name = name
         self.pick_weight = pick_weight
+        self.channels = channels
         
-    def start(self):
+    async def start(self):
         pass
     
-    def end(self):
+    async def end(self):
         # Adjust last game time and current game.
         self.srv.last_game = datetime.now()
         self.srv.cur_game = None

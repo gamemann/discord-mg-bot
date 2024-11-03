@@ -77,10 +77,10 @@ class Server():
             
         return keys[next_idx]
     
-    def start_new_game(self):
+    async def start_new_game(self):
         # Get next game and start.
         next_game = self.get_next_game_key()
         
         self.cur_game = self.games[next_game]
         
-        self.cur_game.start()
+        await self.cur_game.start()
