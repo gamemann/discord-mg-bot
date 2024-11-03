@@ -1,25 +1,23 @@
 import discord
 
-from controller import GameController
-
 class Discord(discord.Client):
     def __init__(self,
         token: str,
-        controller: GameController          
+        intents: discord.Intents
     ):
         self.token = token
-        self.controller = controller
         
-    def connect(self):
-        self.run(self.token)
-    
-    async def on_ready(self):
-        print("Discord bot loaded!")
+        super().__init__(intents = intents)
         
-    async def on_message(self, msg):    
+    async def connect_and_run(self):
+        await self.start(token = self.token, reconnect = True)
+        
+    async def on_message(self, msg): 
+        from bot import discord_chan
+                   
         if msg.guild is None:
             return
-    
-        # Pass server ID and to game controller
-        self.controller.process_msg(msg)
+            
+        # Send message and signal.
+        await discord_chan.emit(msg)
         
