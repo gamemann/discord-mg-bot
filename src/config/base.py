@@ -4,9 +4,9 @@ from utils import safe_write
 
 class ConnectionApi():
     def __init__(self):
-        self.enabled: bool = False
-        self.host: str = "http://localhost"
-        self.token: str = None
+        self.enabled = False
+        self.host = "http://localhost"
+        self.token = None
         
     def as_json(self):
         return {
@@ -17,11 +17,11 @@ class ConnectionApi():
     
 class ConnectionDb():
     def __init__(self):
-        self.enabled: bool = False
-        self.host: str = "localhost"
-        self.port: int = 5432
-        self.user: str = "root"
-        self.password: str = ""
+        self.enabled = False
+        self.host = "localhost"
+        self.port = 5432
+        self.user = "root"
+        self.password = ""
         
     def as_json(self):
         return {
@@ -34,8 +34,8 @@ class ConnectionDb():
 
 class Connections():
     def __init__(self):
-        self.api: ConnectionApi = ConnectionApi()
-        self.db: ConnectionDb = ConnectionDb()
+        self.api = ConnectionApi()
+        self.db = ConnectionDb()
         
     def as_json(self):
         return {
@@ -57,15 +57,28 @@ class General():
         return {}
 
 class Server():
+    def __init__(self):
+        self.games: dict[str, any] = {}
+        
+        self.next_game_cooldown = 120.0
+        self.next_game_random = True
+        
+        self.game_start_auto = False
+        self.game_start_cmd = True
+        self.game_start_manual = True
+        
     def as_json(self):
-        return {}
+        return {
+            "next_game_cooldown": self.next_game_cooldown,
+            "next_game_random": self.next_game_random
+        }
 
 class Config():
     def __init__(self):
         self.connections: Connections = Connections()
         self.bot: Bot = Bot()
         self.general: General = General()
-        self.servers: dict[str, Server] = {}
+        self.servers: dict[int, Server] = {}
         
     def as_json(self):
         return {
@@ -111,6 +124,28 @@ class Config():
             bot = data["bot"]
             
             self.bot.token = bot.get("token", self.bot.token)
+            
+        if "servers" in data:
+            servers = data["servers"]
+            
+            for id, srv in servers.items():
+                val = Server()
+                
+                val.next_game_random = srv.get("next_game_random", val.next_game_random)
+                val.next_game_cooldown = srv.get("next_game_cooldown")
+                
+                val.game_start_auto = srv.get("game_start_auto", val.game_start_auto)
+                val.game_start_cmd = srv.get("game_start_cmd", val.game_start_cmd)
+                val.game_start_manual = srv.get("game_start_manual", val.game_start_manual)
+                
+                # Check for games.
+                if "games" in srv:
+                    games = srv["games"]
+                    
+                    for k, v in games.items():
+                        val.games[k] = v
+                
+                self.servers[int(id)] = val
 
     def save_to_fs(self, path):
         contents = json.dump(self.as_json(), indent = 4)
@@ -121,14 +156,14 @@ class Config():
     def print(self):
         print("Settings")
         
-        # General settings.
+        # General settings
         print(f"\tGeneral")
         
-        # Bot Settings.
+        # Bot settings
         print(f"\tDiscord Bot")
         print(f"\t\tToken => {self.bot.token}")
         
-        # Connections
+        # Connection settings
         print(f"\tConnections")
         
         print(f"\t\tAPI")
@@ -146,6 +181,28 @@ class Config():
         print(f"\t\t\tPort => {db.port}")
         print(f"\t\t\tUser => {db.user}")
         print(f"\t\t\tPassword => {db.password}")
+        
+        # Server settings
+        print(f"\t\tServers")
+        
+        for k, v in self.servers.items():
+            print(f"\t\t\tServer #{k}")
+            
+            print(f"\t\t\t\tNext Game Random => {v.next_game_random}")
+            print(f"\t\t\t\tNext Game Cooldown => {v.next_game_cooldown}")
+            
+            print(f"\t\t\t\tGame Start Auto => {v.game_start_auto}")
+            print(f"\t\t\t\tGame Start Command => {v.game_start_cmd}")
+            print(f"\t\t\t\tGame Start Manual => {v.game_start_manual}")
+            
+            if len(v.games) > 0:
+                print(f"\t\t\t\tGames")
+                
+                for k, v in v.games.items():
+                    print(f"\t\t\t\t\t{k}:")
+                    
+                    for k2, v2 in v.items():
+                        print(f"\t\t\t\t\t\t{k2} => {v2}")
         
         
     
