@@ -32,6 +32,7 @@ class Server():
             # To Do: FIND A BETTER WAY TO DO THIS WITHOUT IMPORTING THE GAME MODULE FOR EVERY SERVER'S GAME.
             try:
                 m = importlib.import_module(f"game.{k}")
+                
                 game_cl = m.Game(
                     bot = self.bot,
                     cfg = self.cfg,

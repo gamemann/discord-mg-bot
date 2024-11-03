@@ -57,7 +57,7 @@ class GameController():
             # Loop through all servers and check
             for k, srv in self.servers.items():
                 # If we aren't ready for a new game, ignore.
-                if srv.cur_game is not None or srv.next_game_cooldown < 1 and (srv.last_game is not None and now < (srv.last_game + srv.next_game_cooldown)):
+                if not srv.game_start_auto or srv.cur_game is not None or srv.next_game_cooldown < 1 or (srv.last_game is not None and now < (srv.last_game + srv.next_game_cooldown)):
                     continue
                 
                 debug_msg(4, self.cfg, f"Found server #{k} ready for a new game...")
