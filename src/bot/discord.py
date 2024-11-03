@@ -1,8 +1,8 @@
-import bot
+import discord
 
 from controller import GameController
 
-class Discord(bot.Client):
+class Discord(discord.Client):
     def __init__(self,
         token: str,
         controller: GameController          
@@ -20,6 +20,6 @@ class Discord(bot.Client):
         if msg.guild is None:
             return
     
-        # Pass to controller
-        self.controller.process_msg(str(msg.guild.id), msg)
+        # Pass server ID and to game controller
+        self.controller.process_msg(msg)
         
