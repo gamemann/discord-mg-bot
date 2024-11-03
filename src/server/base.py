@@ -3,12 +3,26 @@ import importlib
 
 from datetime import datetime
 from bot import Discord
+from config import Config
 
 class Server():    
-    def __init__(self, bot: Discord, id: int, games: dict[str, any]):
+    def __init__(self, bot: Discord, id: int, games: dict[str, any], cfg: Config, next_game_random = True, next_game_cooldown = 120.0, game_start_auto = False, game_start_cmd = True, game_start_manual = True):
         self.bot = bot
         self.id = id
+        self.cfg = cfg
         
+        self.cur_game = None
+        self.last_game: datetime = None
+        
+        # Assign settings.
+        self.next_game_cooldown = next_game_cooldown
+        self.next_game_random = next_game_random
+        
+        self.game_start_auto = game_start_auto
+        self.game_start_cmd = game_start_cmd
+        self.game_start_manual = game_start_manual
+        
+        # Parse server games.
         self.games: dict[str, any] = {}
         
         for k, v in games.items():
@@ -18,7 +32,11 @@ class Server():
             # To Do: FIND A BETTER WAY TO DO THIS WITHOUT IMPORTING THE GAME MODULE FOR EVERY SERVER'S GAME.
             try:
                 m = importlib.import_module(f"game.{k}")
-                game_cl = m.Game(bot = self.bot, **settings)
+                game_cl = m.Game(
+                    bot = self.bot,
+                    cfg = self.cfg,
+                    **settings
+                )
             except Exception as e:
                 print(f"Failed to load game '{k}' for server '{self.id}' due to exception.")
                 print(e)
@@ -26,12 +44,6 @@ class Server():
                 continue
             
             self.games[k] = game_cl
-        
-        self.cur_game = None
-        self.last_game: datetime = None
-        self.next_game_cooldown = 120.0
-        
-        self.next_game_random = True
         
     def get_next_game_key(self):
         # Check for random.
