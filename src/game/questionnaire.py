@@ -2,12 +2,14 @@ import discord
 import random
 
 from bot import Discord
-from .base import GameBase
+from config import Config
+from game import GameBase
 
 class Answer():
-    def __init__(self, answer: str, case_sensitive: bool = False):
+    def __init__(self, answer: str, case_sensitive: bool = False, contains: bool = False):
         self.answer = answer
         self.case_sensitive = case_sensitive
+        self.contains = contains
 
 class Question():
     def __init__(self, question: str, answers: list[Answer], points: int = 1):
@@ -20,16 +22,21 @@ class Game(GameBase):
     
     def __init__(self,
         bot: Discord,
+        cfg: Config,
         questions: list[Question],
         name: str = "Questionnaire",
         pick_weight: float = 50.0,
     ):
         self.bot = bot
+        self.cfg = cfg
         self.name = name
         self.pick_weight = pick_weight
         self.questions = questions
         
-        super().__init__(bot)
+        super().__init__(
+            bot = bot,
+            cfg = cfg
+        )
     
     def start(self):
         # Execute base class.
@@ -52,17 +59,32 @@ class Game(GameBase):
         
         # Loop through answers
         for answer in self.cur_question["answers"]:
+            if "answer" not in answer:
+                continue
+            
             # Strip input and answer.
             input_f = input.strip()
             answer_f = answer["answer"].strip()
             
+            # Retrieve case sensitive.
+            case_sensitive = False
+            
+            if "case_sensitive" in answer and answer["case_sensitive"]:
+                case_sensitive = True
+                
+            # Retrieve contains.
+            contains = False
+            
+            if "contains" in answer and answer["contains"]:
+                contains = True
+            
             # Check if we should lower-case.
-            if not answer["case_sensitive"]:
+            if not case_sensitive:
                 input_f = input_f.lower()
                 answer_f = answer_f.lower()
                 
             # Check input and answer.
-            if input_f == answer_f:
+            if input_f == answer_f or (contains and input_f in answer_f):
                 return True
         
         return False
