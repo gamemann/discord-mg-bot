@@ -18,10 +18,12 @@ class Debug():
 class General():
     def __init__(self):
         self.save_locally = True
+        self.game_check_interval = 120.0
 
     def as_json(self):
         return {
-            "save_locally": self.save_locally
+            "save_locally": self.save_locally,
+            "game_check_interval": self.game_check_interval
         }
 
 class ConnectionApi():
@@ -138,6 +140,7 @@ class Config():
             general = data["general"]
             
             self.general.save_locally = general.get("save_locally", self.general.save_locally)
+            self.general.game_check_interval = general.get("game_check_interval", self.general.game_check_interval)
             
         # Load connections.
         if "connections" in data:
@@ -209,6 +212,9 @@ class Config():
         
         # General settings
         print(f"\tGeneral")
+        
+        print(f"\t\tSave Config Locally => {self.general.save_locally}")
+        print(f"\t\tGame Check Interval => {self.general.game_check_interval}")
         
         # Bot settings
         print(f"\tDiscord Bot")
