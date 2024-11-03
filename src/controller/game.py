@@ -2,7 +2,7 @@ import discord
 import asyncio
 
 from datetime import datetime
-from bot import Discord, discord_chan
+from bot import Discord
 from server import Server
 from config import Config
 from utils import debug_msg
@@ -19,8 +19,8 @@ class GameController():
         
         self.game_check_time = 30.0
         
-        # Subscribe to message channel.
-        discord_chan.subscribe(self.process_msg)
+        self.register_events()
+        self.register_commands()
         
     async def game_thread(self):
         debug_msg(1, self.cfg, "Starting game controller thread...")
@@ -48,19 +48,31 @@ class GameController():
                 
             # Sleep.
             await asyncio.sleep(self.game_check_time)
-        
-    def process_msg(self, msg: discord.Message):
-        # Make sure this is from within a server.
-        if msg.guild is None:
-            return
-        
-        # Extract server ID
-        sid = msg.guild.id
-        
-        if sid not in self.servers:
-            return
+    
+    
+    def register_events(self):
+        @self.bot.event
+        async def on_message(msg: discord.Message):
+            # Make sure this is from within a server.
+            if msg.guild is None:
+                return
             
-        srv = self.servers[sid]
+            # Extract server ID
+            sid = msg.guild.id
+            
+            if sid not in self.servers:
+                return
                 
-        if srv.cur_game is not None:
-            srv.cur_game.process_msg(msg)
+            srv = self.servers[sid]
+                    
+            if srv.cur_game is not None:
+                srv.cur_game.process_msg(msg)
+                
+    def register_commands(self):
+        @self.bot.command("mg_start")
+        async def start(ctx):
+            pass
+        
+        @self.bot.command("mg_stop")
+        async def stop(ctx):
+            pass
