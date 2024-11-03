@@ -4,6 +4,7 @@ import random
 from bot import Discord
 from config import Config
 from game import GameBase
+from server import Server
 
 class Answer():
     def __init__(self, answer: str, case_sensitive: bool = False, contains: bool = False):
@@ -23,19 +24,22 @@ class Game(GameBase):
     def __init__(self,
         bot: Discord,
         cfg: Config,
+        srv: Server,
         questions: list[Question],
         name: str = "Questionnaire",
         pick_weight: float = 50.0,
     ):
         self.bot = bot
         self.cfg = cfg
+        self.srv = srv
         self.name = name
         self.pick_weight = pick_weight
         self.questions = questions
         
         super().__init__(
             bot = bot,
-            cfg = cfg
+            cfg = cfg,
+            srv = srv
         )
     
     def start(self):

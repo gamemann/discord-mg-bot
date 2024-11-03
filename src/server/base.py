@@ -36,6 +36,7 @@ class Server():
                 game_cl = m.Game(
                     bot = self.bot,
                     cfg = self.cfg,
+                    srv = self,
                     **settings
                 )
             except Exception as e:
