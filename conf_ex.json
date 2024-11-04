@@ -11,18 +11,83 @@
             "games": {
                 "questionnaire": {
                     "name": "Questionnaire",
+                    "default_channel": 123456789,
                     "pick_weight": 30.0,
                     "questions": [
                         {
-                            "question": "What is 2 + 1?",
+                            "question": "What city is this?",
+                            "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/800px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
                             "answers": [
                                 {
-                                    "case_sensitive": false,
-                                    "answer": "3"
+                                    "answer": "paris"
+                                }
+                            ]
+                        },
+                        {
+                            "question": "How many gumballs are in this jar?",
+                            "image": "https://m.media-amazon.com/images/I/81PCepMUcyL.jpg",
+                            "answers": [
+                                {
+                                    "answer": "123"
                                 },
                                 {
-                                    "case_sensitive": false,
-                                    "answer": "three"
+                                    "answer": "one hundred three"
+                                }
+                            ]
+                        },
+                        {
+                            "question": "How many weeks are in a year (rounded)?",
+                            "answers": [
+                                {
+                                    "answer": "52"
+                                },
+                                {
+                                    "answer": "fifty two"
+                                }
+                            ]
+                        },
+                        {
+                            "question": "What MLB team won the World Series in 2008?",
+                            "answers": [
+                                {
+                                    "answer": "phillies"
+                                }
+                            ]
+                        },
+                        {
+                            "question": "How many years has the oldest dog lived for?",
+                            "answers": [
+                                {
+                                    "answer": "29.5"
+                                },
+                                {
+                                    "answer": "29.50"
+                                }
+                            ]
+                        },
+                        {
+                            "question": "What is a fear of long words called?",
+                            "answers": [
+                                {
+                                    "answer": "hippopotomonstrosesquippedaliophobia"
+                                }
+                            ]
+                        },
+                        {
+                            "question": "How many triangles are there?",
+                            "image": "https://www.rd.com/wp-content/uploads/2021/06/How-Many-Triangles-Do-You-See-In-This-Puzzle-1.jpg",
+                            "answers": [
+                                {
+                                    "answer": "24"
+                                },
+                                {
+                                    "answer": "25"
+                                },
+                                {
+                                    "answer": "twenty four"
+                                },
+                                {
+                                    "answer": "twenty five"
                                 }
                             ]
                         }
