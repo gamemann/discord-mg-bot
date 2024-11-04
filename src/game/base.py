@@ -7,6 +7,8 @@ from config import Config
 from server import Server
 
 class GameBase():
+    points: dict[int, int] = {}
+    
     def __init__(self,
         bot: Discord,
         cfg: Config,

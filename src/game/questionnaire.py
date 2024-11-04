@@ -15,10 +15,11 @@ class Answer():
         self.contains = contains
 
 class Question():
-    def __init__(self, question: str, answers: list[Answer], points: int = 1):
+    def __init__(self, question: str, answers: list[Answer], points: int = 1, image: str = None):
         self.question = question
         self.answers = answers
         self.points = points
+        self.image = image
         
     def __eq__(self, o):
         if isinstance(o, Question):
@@ -32,7 +33,6 @@ class Question():
 class Game(GameBase):
     cur_question: Question = None
     questions_asked: list[Question] = []
-    points: dict[int, int] = {}
     users_answered: list[int] = []
     
     def __init__(self,
@@ -46,7 +46,8 @@ class Game(GameBase):
         pick_weight: float = 50.0,
         time_per_question = 30.0,
         min_questions_per_round = 5,
-        max_questions_per_round = 10
+        max_questions_per_round = 10,
+        announce_end = True
     ):
         self.bot = bot
         self.cfg = cfg
@@ -61,10 +62,48 @@ class Game(GameBase):
         self.name = name
         self.pick_weight = pick_weight
         
-        self.questions = questions
-        self.time_per_question = time_per_question
-        self.min_questions_per_round = min_questions_per_round
-        self.max_questions_per_round = max_questions_per_round
+        # Retrieve questions and parse if needed.
+        all_questions: list[Question] = []
+        
+        if isinstance(questions, list):
+            if all(isinstance(q, Question) for q in questions):
+                all_questions = questions
+            # If this is a dictionary, we need to convert to Question classes.
+            elif all(isinstance(q, dict) for q in questions):
+                # Parse questions dictionary into question class.
+                for q in questions:
+                    if "answers" not in q:
+                        continue
+                    
+                    answers: list[Answer] = []
+                    
+                    # Compile answers.
+                    for a in q["answers"]:
+                        if "answer" not in a:
+                            continue
+                        
+                        new_ans = Answer(
+                            answer = str(a["answer"]),
+                            case_sensitive = bool(a["case_sensitive"]) if "case_sensitive" in a else False,
+                            contains = bool(a["contains"]) if "contains" in a else False
+                        )
+                        
+                        answers.append(new_ans)
+                    
+                    new_q = Question(
+                        question = str(q["question"]) if "question" in q else None,
+                        points = int(q["points"]) if "points" in q else 1,
+                        image = str(q["image"]) if "image" in q else None,
+                        answers = answers
+                    )
+                    
+                    all_questions.append(new_q)
+        
+        self.questions = all_questions
+        self.time_per_question = float(time_per_question)
+        self.min_questions_per_round = int(min_questions_per_round)
+        self.max_questions_per_round = int(max_questions_per_round)
+        self.announce_end = bool(announce_end)
 
         super().__init__(
             bot = bot,
@@ -109,19 +148,33 @@ class Game(GameBase):
             # Append to questions asked.
             self.questions_asked.append(self.cur_question)
             
+            # Clear users answered list.
+            self.users_answered = []
+            
         # Shut down game.
-        await self.end()
+        await self.end(chan_id)
         
-    async def end(self):
+    async def end(self, chan_id: int):
         # Empty questions asked and users answered.
         self.questions_asked = []
-        self.users_answered = []
         
         debug_msg(3, self.cfg, f"[Questionnaire] Ending game for server #{self.srv.id}...")
         
         # Execute base class.
-        await super().end()    
+        await super().end()
         
+        # Check if we should announce.
+        if self.announce_end:
+            chan = self.bot.get_channel(chan_id)
+            
+            if chan:
+                embed = discord.Embed(
+                    title = "Questionnaire",
+                    description = "The game has ended!"
+
+                )    
+            
+                await chan.send(embed = embed)        
     async def ask_new_question(self, chan_id: int):
         # We need to make sure we don't ask the same question twice in the same round!
         questions_available = [question for question in self.questions if question not in self.questions_asked]
@@ -133,9 +186,9 @@ class Game(GameBase):
             return
     
         # Get new question.
-        self.cur_question = random.choice(self.questions)
+        self.cur_question = random.choice(questions_available)
         
-        debug_msg(3, self.cfg, f"[Questionnaire] Picking new question '{self.cur_question['question']}' for server #{self.srv.id}!")
+        debug_msg(3, self.cfg, f"[Questionnaire] Picking new question '{self.cur_question.question}' for server #{self.srv.id}!")
         
         # Get channel.
         chan = self.bot.get_channel(chan_id)
@@ -145,35 +198,40 @@ class Game(GameBase):
             
             return
         
+        embed = discord.Embed(
+            title = "Questionnaire",
+            description = f"Question: {self.cur_question.question}",
+        )
+        
+        # Check if we should set an image.
+        if self.cur_question.image is not None:
+            embed.set_image(
+                url = self.cur_question.image
+            )
+        
         # Send the question.
-        await chan.send(f"Question: {self.cur_question['question']}")
+        await chan.send(embed = embed)
         
     def is_correct(self, input: str):        
         if self.cur_question is None:
             return False
         
-        if "answers" not in self.cur_question:
-            return False
-        
         # Loop through answers
-        for answer in self.cur_question["answers"]:
-            if "answer" not in answer:
-                continue
-            
+        for answer in self.cur_question.answers:            
             # Strip input and answer.
             input_f = input.strip()
-            answer_f = answer["answer"].strip()
+            answer_f = answer.answer.strip()
             
             # Retrieve case sensitive.
             case_sensitive = False
             
-            if "case_sensitive" in answer and answer["case_sensitive"]:
+            if answer.case_sensitive:
                 case_sensitive = True
                 
             # Retrieve contains.
             contains = False
             
-            if "contains" in answer and answer["contains"]:
+            if answer.contains:
                 contains = True
             
             # Check if we should lower-case.
@@ -206,19 +264,14 @@ class Game(GameBase):
                 await msg.channel.send(f"<@{author_id}> was correct!")
                 
                 # Add points.
-                points = 1
+                points = self.cur_question.points
                 
-                if "points" in self.cur_question:
-                    points = int(self.cur_question["points"])
-                    
                 if author_id not in self.points:
                     self.points[author_id] = points
                 else:
                     self.points[author_id] += points
                 
                 self.users_answered.append(author_id)
-            else:
-                print("Wrong answer")
         except Exception as e:
             debug_msg(0, self.cfg, f"[Questionnaire] Failed to process message due to exception.")
             debug_msg(0, self.cfg, e)
