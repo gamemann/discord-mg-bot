@@ -4,6 +4,12 @@ An open source [Discord](https://discord.com/) bot written in Python that allows
 
 **NOTE** - As stated before, this bot is not finished and unusable in its current state. I'm pushing to this repository for transparency with the project and I also want to save to the cloud.
 
+## Previews
+Previews as of *November 3rd, 2024* (still not finished!).
+
+### Questionnaire
+![Questionnaire GIF](./preview/questionnaire01.gif)
+
 ## Command Line Usage
 The following flags are supported in the command line.
 
