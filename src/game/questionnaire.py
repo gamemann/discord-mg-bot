@@ -15,11 +15,12 @@ class Answer():
         self.contains = contains
 
 class Question():
-    def __init__(self, question: str, answers: list[Answer], points: int = 1, image: str = None):
+    def __init__(self, question: str, answers: list[Answer], points: int = 1, image: str = None, duration: float = None):
         self.question = question
         self.answers = answers
         self.points = points
         self.image = image
+        self.duration = duration
         
     def __eq__(self, o):
         if isinstance(o, Question):
@@ -94,6 +95,7 @@ class Game(GameBase):
                         question = str(q["question"]) if "question" in q else None,
                         points = int(q["points"]) if "points" in q else 1,
                         image = str(q["image"]) if "image" in q else None,
+                        duration = float(q["duration"]) if "duration" in q else None,
                         answers = answers
                     )
                     
@@ -142,8 +144,14 @@ class Game(GameBase):
             if self.cur_question is None:
                 break
             
+            # Determine duration.
+            dur = self.time_per_question
+            
+            if self.cur_question.duration is not None and self.cur_question.duration > 0.0:
+                dur = self.cur_question.duration
+            
             # Give it time.
-            await asyncio.sleep(self.time_per_question)
+            await asyncio.sleep(dur)
             
             # Append to questions asked.
             self.questions_asked.append(self.cur_question)
@@ -174,7 +182,8 @@ class Game(GameBase):
 
                 )    
             
-                await chan.send(embed = embed)        
+                await chan.send(embed = embed)
+                
     async def ask_new_question(self, chan_id: int):
         # We need to make sure we don't ask the same question twice in the same round!
         questions_available = [question for question in self.questions if question not in self.questions_asked]
