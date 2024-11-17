@@ -46,6 +46,7 @@ class ConnectionDb():
         self.enabled = False
         self.host = "localhost"
         self.port = 5432
+        self.name = "discord_mg"
         self.user = "root"
         self.password = ""
         self.web_config = True
@@ -55,6 +56,7 @@ class ConnectionDb():
             "enabled": self.enabled,
             "host": self.host,
             "port": self.port,
+            "name": self.name,
             "user": self.user,
             "password": self.password,
             "web_config": self.web_config
@@ -162,6 +164,7 @@ class Config():
                 self.connections.db.enabled = db.get("enabled", self.connections.db.enabled)
                 self.connections.db.host = db.get("host", self.connections.db.host)
                 self.connections.db.port = db.get("port", self.connections.db.port)
+                self.connections.db.name = db.get("name", self.connections.db.name)
                 self.connections.db.user = db.get("user", self.connections.db.user)
                 self.connections.db.password = db.get("password", self.connections.db.password)
                 self.connections.db.web_config = db.get("web_config", self.connections.db.web_config)

@@ -90,7 +90,16 @@ async def main():
     # Fallback to database.
     if conn is None and cfg.connections.db.enabled:
         try:
-            conn = ConnectionDb(cfg.connections.db.host, cfg.connections.db.port, cfg.connections.db.user, cfg.connections.db.password)
+            conn = ConnectionDb(
+                host = cfg.connections.db.host,
+                port = cfg.connections.db.port,
+                name = cfg.connections.db.name,
+                user = cfg.connections.db.user,
+                password = cfg.connections.db.password
+            )
+            
+            # Connect to database.
+            await conn.connect()
         except Exception as e:
             debug_msg(0, cfg, "Failed to setup database due to exception. Web config and stats will be disabled!")
             debug_msg(0, cfg, e)
