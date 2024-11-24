@@ -5,15 +5,11 @@ class Connection():
     def __init__(self):
         super().__init__()
     
-    def get_cfg(self) -> Config:
+    async def get_cfg(self) -> Config:
         pass
     
-    def get_user_stats(self, sid: str, uid: str) -> UserStats:
+    async def get_user_stats(self, sid: str, uid: str) -> UserStats:
         pass
     
-    def update_user_stats(self, sid: str, uid: str, stats: UserStats):
+    async def add_user_points(self, sid: str, uid: str, game: str = "unknown", points: int = 0):
         pass
-    
-    
-    
-    

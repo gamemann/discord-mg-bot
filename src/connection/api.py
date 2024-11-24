@@ -15,17 +15,17 @@ class ConnectionApi(Connection):
         
         super().__init__()
         
-    def get_cfg(self) -> Config:
+    async def get_cfg(self) -> Config:
         # To Do: Get config from REST API.
         pass
     
-    def get_user_stats(self, sid: str, uid: str) -> UserStats:
+    async def get_user_stats(self, sid: str, uid: str) -> UserStats:
         stats: UserStats = UserStats()
         
         # To Do: Get user stats from REST API.
         
         return stats
     
-    def update_user_stats(self, sid: str, uid: str, stats: UserStats):
+    async def add_user_points(self, sid: str, uid: str, game: str = "unknown", points: int = 0):
         # To Do: Update user stats via REST API.
         pass

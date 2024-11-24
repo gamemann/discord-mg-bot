@@ -12,12 +12,16 @@ from utils import debug_msg
 
 HELP_MENU = f"""USAGE: python3 src/main.py [--cfg=<path> -l -h]
 \t--cfg => The path to the config file.
+\t-s --setup => Setup database tables.
+\t-d --drop => Drop all database tables.
 \t-l --list => Whether to list config contents.
 \t-h --help => Whether to print the help menu."""
 
 async def main():
     # CLI arguments.
     cfg_path = "./conf.json"
+    setup = False
+    drop_tables = False
     list = False
     help = False
     
@@ -31,6 +35,14 @@ async def main():
             
             if val_idx < len(sys.argv):
                 cfg_path = sys.argv[val_idx]
+                
+        # Setup.
+        if arg == "-s" or arg == "--setup":
+            setup = True
+            
+        # Drop tables.
+        if arg == "-d" or arg == "--drop":
+            drop_tables = True
         
         # Handle list.
         if arg == "-l" or arg == "--list":
@@ -80,7 +92,7 @@ async def main():
         # Check web config.
         if conn is not None and cfg.connections.api.web_config:
             try:
-                conn.get_cfg()
+                await conn.get_cfg()
                 
                 save_to_fs = True
             except Exception as e:
@@ -100,14 +112,36 @@ async def main():
             
             # Connect to database.
             await conn.connect()
+            
+            debug_msg(1, cfg, f"[DB] Connected to '{conn.host}:{conn.port}'...")
         except Exception as e:
-            debug_msg(0, cfg, "Failed to setup database due to exception. Web config and stats will be disabled!")
+            debug_msg(0, cfg, "[DB] Failed to setup database due to exception. Web config and stats will be disabled!")
             debug_msg(0, cfg, e)
+         
+        # Check for drop tables.    
+        if drop_tables:
+            try:
+                await conn.drop_tables()
+                
+                debug_msg(1, cfg, "[DB] Dropped all tables!")
+            except Exception as e:
+                debug_msg(0, cfg, "[DB] Failed to drop tables in database due to exception.")
+                debug_msg(0, cfg, e)
+                
+        # Setup tables.
+        if setup:
+            try:
+                await conn.setup()
+                
+                debug_msg(1, cfg, "[DB] Setup all tables!")
+            except Exception as e:
+                debug_msg(0, cfg, "[DB] Failed to setup tables in database due to exception.")
+                debug_msg(0, cfg, e)
             
         # Check web config
         if conn is not None and cfg.connections.db.web_config:
             try:
-                conn.get_cfg()
+                await conn.get_cfg()
                 
                 save_to_fs = True
             except Exception as e:
@@ -161,6 +195,10 @@ async def main():
     await asyncio.create_task(controller.game_thread())
     
     debug_msg(1, cfg, "Exiting program!")
+    
+    # Cleanup connection.
+    if conn is not None:
+        await conn.close()
 
 if __name__ == "__main__":
     asyncio.run(main())

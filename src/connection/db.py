@@ -19,7 +19,7 @@ class ConnectionDb(Connection):
         self.password = password
         
         # Load PostgreSQL connection.
-        self.db = None
+        self.db: psycopg.AsyncConnection = None
         
         super().__init__()
         
@@ -31,18 +31,96 @@ class ConnectionDb(Connection):
         )
         
     async def setup(self):
-        pass
+        # Servers table
+        table_servers = """
+            CREATE TABLE IF NOT EXISTS servers (
+                sid BIGINT PRIMARY KEY  
+            );
+        """
+        
+        # Users table
+        table_users = """
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                dis_uid BIGINT
+            );
+        """
+        
+        # Points table.
+        table_points = """
+            CREATE TABLE IF NOT EXISTS points (
+                id SERIAL PRIMARY KEY,
+                uid BIGINT NOT NULL,
+                sid BIGINT NOT NULL,
+                game TEXT NOT NULL,
+                date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                points int NOT NULL DEFAULT 0,
+                FOREIGN KEY (uid) REFERENCES users(dis_uid) ON DELETE CASCADE,
+                FOREIGN KEY (sid) REFERENCES servers(sid) ON DELETE CASCADE  
+            );
+        """
+        
+        # Execute queries.
+        await self.db.execute(table_servers)
+        await self.db.execute(table_users)
+        await self.db.execute(table_points)
+        
+        await self.db.commit()
+        
+    async def drop_tables(self):
+        await self.db.execute("DROP TABLE IF EXISTS users")
+        await self.db.execute("DROP TABLE IF EXISTS servers")
+        await self.db.execute("DROP TABLE IF EXISTS points")
 
-    def get_cfg(self) -> Config:
+    async def get_cfg(self) -> Config:
         pass
     
-    def get_user_stats(self, sid: str, uid: str) -> UserStats:
+    async def get_user_stats(self, sid: str, uid: str) -> UserStats:
         stats: UserStats = UserStats()
         
-        # To Do: Get user stats from database.
+        q = """
+            WITH ins_server AS (
+                INSERT INTO servers (sid)
+                VALUES ($1)
+                ON CONFLICT (sid) DO NOTHING
+            ),
+            ins_user AS  (
+                INSERT INTO users (dis_uid)
+                VALUES ($2)
+                ON CONFLICT(dis_uid) DO NOTHING
+            )
+            SELECT sid, points
+            FROM points
+            WHERE uid = $2
+        """
+        
+        res = await self.db.fetchmany(q, sid, uid)
+        
+        for r in res:
+            if str(r["sid"]) == sid:
+                stats.srv_points += int(r["points"])
+                
+            stats.global_points += int(r["points"]) 
         
         return stats
     
-    def update_user_stats(self, sid: str, uid: str, stats: UserStats):
-        # To Do: Update get stats in database.
-        pass
+    async def add_user_points(self, sid: str, uid: str, game: str = "unknown", points: int = 0):
+        q = """
+            WITH ins_server AS (
+                INSERT INTO servers (sid)
+                VALUES ($1)
+                ON CONFLICT (sid) DO NOTHING
+            ),
+            ins_user AS (
+                INSERT INTO users (dis_uid)
+                VALUES ($2)
+                ON CONFLICT (dis_uid) DO NOTHING
+            )
+            INSERT INTO points (sid, uid, game, points)
+            VALUES ($1, $2, $3, $4)
+        """
+        
+        await self.db.execute(q, sid, uid, game, points)
+        
+    async def close(self):
+        await self.db.close()
