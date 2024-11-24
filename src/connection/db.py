@@ -89,18 +89,18 @@ class ConnectionDb(Connection):
                 VALUES ($2)
                 ON CONFLICT(dis_uid) DO NOTHING
             )
-            SELECT sid, points
+            SELECT
+                COALESCE(SUM(CASE WHEN sid = $1 THEN points END), 0) AS srv_points,
+                COALESCE(SUM(points), 0) AS global_points
             FROM points
             WHERE uid = $2
         """
         
-        res = await self.db.fetchmany(q, sid, uid)
+        res = await self.db.fetchrow(q, sid, uid)
         
-        for r in res:
-            if str(r["sid"]) == sid:
-                stats.srv_points += int(r["points"])
-                
-            stats.global_points += int(r["points"]) 
+        if res is not None:
+            stats.srv_points = int(res["srv_points"])                
+            stats.global_points += int(res["global_points"]) 
         
         return stats
     
