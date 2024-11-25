@@ -54,7 +54,7 @@ class ConnectionDb(Connection):
                 id SERIAL PRIMARY KEY,
                 uid BIGINT NOT NULL,
                 sid BIGINT NOT NULL,
-                game TEXT NOT NULL,
+                game VARCHAR(255),
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 points int NOT NULL DEFAULT 0,
@@ -119,12 +119,12 @@ class ConnectionDb(Connection):
                 ON CONFLICT (sid) DO NOTHING
             ),
             ins_user AS (
-                INSERT INTO users (dis_uid)
+                INSERT INTO discord_users (id)
                 VALUES (%s)
-                ON CONFLICT (dis_uid) DO NOTHING
+                ON CONFLICT (id) DO NOTHING
             )
             INSERT INTO points (sid, uid, game, points)
-            VALUES (%s, %s, %s, %d)
+            VALUES (%s, %s, %s, %s)
         """
         
         cur = self.db.cursor()
