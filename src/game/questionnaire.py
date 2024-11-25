@@ -8,6 +8,8 @@ from game import GameBase
 from server import Server
 from utils import debug_msg
 
+from connection import Connection
+
 class Answer():
     def __init__(self, answer: str, case_sensitive: bool = False, contains: bool = False):
         self.answer = answer
@@ -39,6 +41,7 @@ class Game(GameBase):
     def __init__(self,
         bot: Discord,
         cfg: Config,
+        conn: Connection,
         srv: Server,
         questions: list[Question],
         channels: list[int] = [],
@@ -52,6 +55,7 @@ class Game(GameBase):
     ):
         self.bot = bot
         self.cfg = cfg
+        self.conn = conn
         self.srv = srv
         self.channels = channels
         self.default_channel = default_channel
@@ -110,6 +114,7 @@ class Game(GameBase):
         super().__init__(
             bot = bot,
             cfg = cfg,
+            conn = conn,
             srv = srv
         )
     
@@ -262,6 +267,7 @@ class Game(GameBase):
             return
         
         author_id = msg.author.id
+        srv_id = msg.guild.id
         
         # Check if we've answered this question already.
         if author_id in self.users_answered:
@@ -270,8 +276,6 @@ class Game(GameBase):
         # Check if our content's is correct to the current question.
         try:
             if self.is_correct(msg.content):
-                await msg.channel.send(f"<@{author_id}> was correct!")
-                
                 # Add points.
                 points = self.cur_question.points
                 
@@ -279,6 +283,15 @@ class Game(GameBase):
                     self.points[author_id] = points
                 else:
                     self.points[author_id] += points
+                    
+                await msg.channel.send(f"<@{author_id}> was correct and awarded **{points}** points!")
+                
+                # Attempt to award points.
+                try:
+                    await self.conn.add_user_points(str(srv_id), str(author_id), "questionnaire", points)
+                except Exception as e:
+                    debug_msg(0, self.cfg, f"[Questionnaire] Failed to add {points} points to user ID '{author_id}' due to exception")
+                    debug_msg(0, self.cfg, e)
                 
                 self.users_answered.append(author_id)
         except Exception as e:

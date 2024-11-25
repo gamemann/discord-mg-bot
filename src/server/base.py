@@ -4,12 +4,25 @@ import importlib
 from datetime import datetime
 from bot import Discord
 from config import Config
+from connection import Connection
 
 class Server():    
-    def __init__(self, bot: Discord, cfg: Config, id: int, games: dict[str, any], next_game_random = True, next_game_cooldown = 120.0, game_start_auto = False, game_start_cmd = True, game_start_manual = True):
+    def __init__(self,
+        bot: Discord,
+        cfg: Config,
+        conn: Connection,
+        id: int,
+        games: dict[str, any],
+        next_game_random = True,
+        next_game_cooldown = 120.0,
+        game_start_auto = False,
+        game_start_cmd = True,
+        game_start_manual = True
+    ):
         self.bot = bot
         self.id = id
         self.cfg = cfg
+        self.conn = conn
         
         self.cur_game = None
         self.last_game: datetime = None
@@ -36,6 +49,7 @@ class Server():
                 game_cl = m.Game(
                     bot = self.bot,
                     cfg = self.cfg,
+                    conn = self.conn,
                     srv = self,
                     **settings
                 )

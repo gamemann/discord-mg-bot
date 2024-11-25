@@ -39,6 +39,7 @@ class GameController():
             self.servers[int(k)] = Server(
                 bot = self.bot,
                 cfg = self.cfg,
+                conn = self.conn,
                 id = int(k),
                 games = games,
                 next_game_random = srv.next_game_random,
