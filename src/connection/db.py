@@ -40,9 +40,11 @@ class ConnectionDb(Connection):
         
         # Users table
         table_users = """
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                dis_uid BIGINT
+            CREATE TABLE IF NOT EXISTS discord_users (
+                id BIGINT PRIMARY KEY,
+                display_name VARCHAR (255),
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             );
         """
         
@@ -53,9 +55,10 @@ class ConnectionDb(Connection):
                 uid BIGINT NOT NULL,
                 sid BIGINT NOT NULL,
                 game TEXT NOT NULL,
-                date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 points int NOT NULL DEFAULT 0,
-                FOREIGN KEY (uid) REFERENCES users(dis_uid) ON DELETE CASCADE,
+                FOREIGN KEY (uid) REFERENCES discord_users(id) ON DELETE CASCADE,
                 FOREIGN KEY (sid) REFERENCES servers(sid) ON DELETE CASCADE  
             );
         """
@@ -68,7 +71,7 @@ class ConnectionDb(Connection):
         await self.db.commit()
         
     async def drop_tables(self):
-        await self.db.execute("DROP TABLE IF EXISTS users")
+        await self.db.execute("DROP TABLE IF EXISTS discord_users")
         await self.db.execute("DROP TABLE IF EXISTS servers")
         await self.db.execute("DROP TABLE IF EXISTS points")
 
@@ -81,26 +84,30 @@ class ConnectionDb(Connection):
         q = """
             WITH ins_server AS (
                 INSERT INTO servers (sid)
-                VALUES ($1)
+                VALUES (%s)
                 ON CONFLICT (sid) DO NOTHING
             ),
             ins_user AS  (
-                INSERT INTO users (dis_uid)
-                VALUES ($2)
-                ON CONFLICT(dis_uid) DO NOTHING
+                INSERT INTO discord_users (id)
+                VALUES (%s)
+                ON CONFLICT(id) DO NOTHING
             )
             SELECT
-                COALESCE(SUM(CASE WHEN sid = $1 THEN points END), 0) AS srv_points,
+                COALESCE(SUM(CASE WHEN sid = %s THEN points END), 0) AS srv_points,
                 COALESCE(SUM(points), 0) AS global_points
             FROM points
-            WHERE uid = $2
+            WHERE uid = %s
         """
         
-        res = await self.db.fetchrow(q, sid, uid)
-        
+        cur = self.db.cursor()
+        await cur.execute(q, (sid, uid, sid, uid))
+        res = await cur.fetchone()
+                
         if res is not None:
-            stats.srv_points = int(res["srv_points"])                
-            stats.global_points += int(res["global_points"]) 
+            stats.srv_points = int(res[0])                
+            stats.global_points += int(res[1])
+            
+        await cur.close()
         
         return stats
     
@@ -108,19 +115,22 @@ class ConnectionDb(Connection):
         q = """
             WITH ins_server AS (
                 INSERT INTO servers (sid)
-                VALUES ($1)
+                VALUES (%s)
                 ON CONFLICT (sid) DO NOTHING
             ),
             ins_user AS (
                 INSERT INTO users (dis_uid)
-                VALUES ($2)
+                VALUES (%s)
                 ON CONFLICT (dis_uid) DO NOTHING
             )
             INSERT INTO points (sid, uid, game, points)
-            VALUES ($1, $2, $3, $4)
+            VALUES (%s, %s, %s, %d)
         """
         
-        await self.db.execute(q, sid, uid, game, points)
+        cur = self.db.cursor()
+        await cur.execute(q, (sid, uid, sid, uid, game, points))
+        
+        await cur.close()
         
     async def close(self):
         await self.db.close()
