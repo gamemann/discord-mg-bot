@@ -187,7 +187,7 @@ async def main():
     debug_msg(2, cfg, f"Creating game controller...")
     
     # Create controller and pass Discord bot.
-    controller = GameController(bot, cfg)
+    controller = GameController(bot, cfg, conn)
     
     debug_msg(2, cfg, f"Starting game controller task...")
     
