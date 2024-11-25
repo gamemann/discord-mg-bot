@@ -7,11 +7,13 @@ from bot import Discord
 from server import Server
 from config import Config
 from utils import debug_msg
+from connection import Connection
 
 class GameController():
-    def __init__(self, bot: Discord, cfg: Config):
+    def __init__(self, bot: Discord, cfg: Config, conn: Connection):
         self.bot = bot
         self.cfg = cfg
+        self.conn = conn
         self.servers: dict[int, Server] = {}
         
         # Parse servers.
@@ -91,6 +93,9 @@ class GameController():
                     
             if srv.cur_game is not None:
                 await srv.cur_game.process_msg(msg)
+            
+            # Process commands.
+            await self.bot.process_commands(msg)
                 
     def register_commands(self):
         @self.bot.command("start")
@@ -100,3 +105,21 @@ class GameController():
         @self.bot.command("stop")
         async def stop(ctx):
             print("Executed stop")
+            
+        @self.bot.command("stats")
+        async def stats(ctx):
+            author_id = ctx.author.id
+            srv_id = ctx.guild.id
+            
+            if not self.conn:
+                await ctx.send(f"<@{author_id}> Connection not available.")
+                
+                return
+            
+            try:
+                stats = await self.conn.get_user_stats(str(srv_id), str(author_id))
+            except Exception as e:
+                debug_msg(0, self.cfg, f"[CMD] Failed to retrieve user stats for server '{srv_id}' and user ID '{author_id}' due to exception.")
+                debug_msg(0, self.cfg, e)
+            
+            await ctx.send(f"<@{author_id}> You currently have **{stats.srv_points}** server points and **{stats.global_points}** global points!")
